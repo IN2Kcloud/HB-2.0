@@ -45,8 +45,8 @@
 
         // Environment map
         new THREE.RGBELoader()
-            .setPath('/media/pp.hdr/')
-            .load('your-hdr-file.hdr', function (texture) {
+            .setPath('/media/')
+            .load('pp.hdr', function (texture) {
                 const pmremGenerator = new THREE.PMREMGenerator(renderer);
                 const envMap = pmremGenerator.fromEquirectangular(texture).texture;
                 scene.environment = envMap;
