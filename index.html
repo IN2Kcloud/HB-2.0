@@ -31,65 +31,81 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/pmrem/PMREMGenerator.js"></script>
     <script>
-        // JavaScript to load and render the .glb model
-        const container = document.getElementById('container');
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('container');
 
-        // Scene setup
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1;
-        container.appendChild(renderer.domElement);
+            // Scene setup
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1;
+            container.appendChild(renderer.domElement);
 
-        // Environment map
-        new THREE.RGBELoader()
-            .setPath('/media/')
-            .load('pp.hdr', function (texture) {
-                const pmremGenerator = new THREE.PMREMGenerator(renderer);
-                const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-                scene.environment = envMap;
-                texture.dispose();
-                pmremGenerator.dispose();
+            // Environment map
+            new THREE.RGBELoader()
+                .setPath('/media/')
+                .load('ml_gradient_freebie_01.hdr', function (texture) {
+                    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+                    const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+                    scene.environment = envMap;
+                    texture.dispose();
+                    pmremGenerator.dispose();
 
-                // Load the .glb model
-                const loader = new THREE.GLTFLoader();
-                loader.load('/media/energy-can.glb', function (gltf) {
-                    const model = gltf.scene;
-                    scene.add(model);
+                    // Load the .glb model
+                    const loader = new THREE.GLTFLoader();
+                    loader.load('/media/energy-can.glb', function (gltf) {
+                        const model = gltf.scene;
+                        scene.add(model);
 
-                    // Center the model
-                    model.position.set(0, 0, 0);
-                    model.scale.set(1, 1, 1);
+                        // Center the model
+                        model.position.set(0, -10, -30);
+                        model.scale.set(1, 1, 1);
 
-                    animate(); // Start the animation loop after model is loaded
+                        // Animation loop
+                        let clock = new THREE.Clock();
+                        function animate() {
+                            requestAnimationFrame(animate);
+                            const time = clock.getElapsedTime();
+
+                            // Apply rotation
+                            model.rotation.y = time;
+
+                            // Apply pulsing scale
+                            const scale = 1 + 0.1 * Math.sin(time * 2);
+                            model.scale.set(scale, scale, scale);
+
+                            // Apply back-and-forth position
+                            model.position.z = -30 + 5 * Math.sin(time);
+
+                            renderer.render(scene, camera);
+                        }
+
+                        animate(); // Start the animation loop after model is loaded
+                    }, undefined, function (error) {
+                        console.error('An error happened while loading the GLB model:', error);
+                    });
                 }, undefined, function (error) {
-                    console.error(error);
+                    console.error('An error happened while loading the HDR environment map:', error);
                 });
+
+            // Camera position
+            camera.position.set(0, 1, 5);
+
+            // Add directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 7.5);
+            scene.add(directionalLight);
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
             });
-
-        // Camera position
-        camera.position.set(0, 1, 5);
-
-        // Add directional light
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7.5);
-        scene.add(directionalLight);
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            renderer.setSize(width, height);
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
         });
     </script>
 </body>
