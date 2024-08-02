@@ -26,8 +26,10 @@
 
     <!-- Include Three.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Include GLTFLoader -->
+    <!-- Include GLTFLoader and RGBELoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/pmrem/PMREMGenerator.js"></script>
     <script>
         // JavaScript to load and render the .glb model
         const container = document.getElementById('container');
@@ -37,34 +39,43 @@
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
         container.appendChild(renderer.domElement);
 
-        // Add ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+        // Environment map
+        new THREE.RGBELoader()
+            .setPath('/media/pp.hdr/')
+            .load('your-hdr-file.hdr', function (texture) {
+                const pmremGenerator = new THREE.PMREMGenerator(renderer);
+                const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+                scene.environment = envMap;
+                texture.dispose();
+                pmremGenerator.dispose();
+
+                // Load the .glb model
+                const loader = new THREE.GLTFLoader();
+                loader.load('/media/energy-can.glb', function (gltf) {
+                    const model = gltf.scene;
+                    scene.add(model);
+
+                    // Center the model
+                    model.position.set(0, 0, 0);
+                    model.scale.set(1, 1, 1);
+
+                    animate(); // Start the animation loop after model is loaded
+                }, undefined, function (error) {
+                    console.error(error);
+                });
+            });
+
+        // Camera position
+        camera.position.set(0, 1, 5);
 
         // Add directional light
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
         directionalLight.position.set(5, 10, 7.5);
         scene.add(directionalLight);
-
-        // Load the .glb model
-        const loader = new THREE.GLTFLoader();
-        loader.load('media/energy-can.glb', function (gltf) {
-            const model = gltf.scene;
-            scene.add(model);
-
-            // Center the model
-            model.position.set(0, 0, 0);
-            model.scale.set(1, 1, 1);
-
-            animate(); // Start the animation loop after model is loaded
-        }, undefined, function (error) {
-            console.error(error);
-        });
-
-        // Camera position
-        camera.position.set(0, 1, 5);
 
         // Animation loop
         function animate() {
