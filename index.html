@@ -46,7 +46,7 @@
             // Environment map
             new THREE.RGBELoader()
                 .setPath('media/')
-                .load('ml_gradient_freebie_01.hdr', function (texture) {
+                .load('ml_gradient_freebie_02.hdr', function (texture) {
                     const pmremGenerator = new THREE.PMREMGenerator(renderer);
                     const envMap = pmremGenerator.fromEquirectangular(texture).texture;
                     scene.environment = envMap;
